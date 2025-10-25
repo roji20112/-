@@ -1,1 +1,301 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لعبة: مطعمي الجزائري</title>
+  <style>
+    :root{--bg:#fff7ec;--card:#fff;--accent:#d35400;--muted:#7b7b7b}
+    *{box-sizing:border-box;font-family: 'Segoe UI', Tahoma, Arial, sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#fff7ec 0%, #ffe9d0 100%);color:#333}
+    .app{max-width:980px;margin:24px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    header h1{margin:0;font-size:22px}
+    .top-stats{margin-left:auto;text-align:left}
+    .board{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:18px}
+    .panel{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+
+    /* Orders area */
+    .orders{min-height:260px;display:flex;flex-direction:column;gap:12px}
+    .order{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;border:1px dashed #f0c6a1}
+    .order .meta{display:flex;gap:12px;align-items:center}
+    .dish-ico{width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;background:linear-gradient(135deg,#fffafa,#fff1e6)}
+    .order h3{margin:0;font-size:16px}
+    .timer{font-weight:700;color:var(--accent)}
+    .order button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+
+    /* Kitchen */
+    .kitchen{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+    .dish{padding:10px;border-radius:10px;border:1px solid #f1d2b3;text-align:center;cursor:pointer}
+    .dish.selected{outline:3px solid rgba(211,84,0,0.18)}
+    .progress{height:10px;background:#f3f3f3;border-radius:8px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#ffd6a5,#ff8d00)}
+
+    /* Sidebar */
+    .sidebar h2{margin:0 0 6px 0}
+    .money{font-size:20px;font-weight:800;color:#0a7b2f}
+    .shop{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+    .shop button{padding:8px;border-radius:8px;border:1px solid #e7b58f;background:#fff;cursor:pointer}
+
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+
+    /* Responsive */
+    @media (max-width:900px){.board{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect rx='12' width='64' height='64' fill='%23ffb26b'/><text x='32' y='40' font-size='22' font-family='Arial' fill='white' text-anchor='middle'>🍽️</text></svg>" alt="logo" width="56" style="border-radius:10px"/>
+      <h1>لعبة: مطعمي الجزائري</h1>
+      <div class="top-stats">
+        <div>الوقت: <span id="time">00:00</span></div>
+        <div>المستوى: <strong id="level">1</strong></div>
+      </div>
+    </header>
+
+    <div class="board">
+      <div>
+        <div class="panel">
+          <h2>طلبات الزبائن</h2>
+          <div class="orders" id="orders"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <button id="new-order">✚ طلب جديد (تجريبي)</button>
+            <div style="margin-left:auto;color:var(--muted)">قواعد: حضّر و قدّم قبل انتهاء الوقت</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <h2>المطبخ</h2>
+          <div class="kitchen" id="kitchen"></div>
+        </div>
+      </div>
+
+      <aside class="panel sidebar">
+        <h2>الإحصائيات</h2>
+        <div>النقود: <span class="money" id="money">0 DA</span></div>
+        <div>النقاط: <strong id="score">0</strong></div>
+        <div style="margin-top:10px">حياة: <span id="lives">3</span></div>
+
+        <h3 style="margin-top:14px">المتجر</h3>
+        <div class="shop">
+          <button data-cost="50" id="upgrade-speed">ترقية سرعة الطهي (50 DA)</button>
+          <button data-cost="120" id="upgrade-capacity">زيادة الطاولات (120 DA)</button>
+        </div>
+
+        <h3 style="margin-top:14px">نصائح</h3>
+        <ul style="padding-left:18px;margin:0;color:var(--muted)">
+          <li>اختر الطبق المناسب ثم اضغط طهي ثم قدمه.</li>
+          <li>كلما ارتفع المستوى، الطلبات تزداد سرعة.</li>
+        </ul>
+      </aside>
+    </div>
+
+    <footer>الأطباق محلية: كسكس، شربة، طاجين، مقروط — طوّر مطعمك واصبح الأفضل في الحي!</footer>
+  </div>
+
+  <script>
+    // بيانات الأطباق
+    const DISHES = [
+      {id:'couscous', name:'كسكس', emoji:'🍛', price:30, time:15},
+      {id:'chorba', name:'شربة (شوربة)', emoji:'🥣', price:20, time:10},
+      {id:'tajine', name:'طاجين', emoji:'🍲', price:35, time:18},
+      {id:'mhajeb', name:'محاجب', emoji:'🥟', price:25, time:12},
+      {id:'makroud', name:'مقروض', emoji:'🥮', price:28, time:14}
+    ];
+
+    // حالة اللعبة
+    let state = {
+      money: 0,
+      score: 0,
+      lives: 3,
+      orders: [],
+      nextOrderId: 1,
+      cookSpeedMultiplier: 1,
+      capacity: 3,
+      level:1,
+      seconds:0
+    };
+
+    const ordersEl = document.getElementById('orders');
+    const kitchenEl = document.getElementById('kitchen');
+    const moneyEl = document.getElementById('money');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+    const timeEl = document.getElementById('time');
+
+    // أنشئ أزرار الأطباق في المطبخ
+    function renderKitchen(){
+      kitchenEl.innerHTML = '';
+      DISHES.forEach(d=>{
+        const div = document.createElement('div');
+        div.className = 'dish';
+        div.innerHTML = `<div style='font-size:26px'>${d.emoji}</div><strong>${d.name}</strong><div style='font-size:13px;color:var(--muted)'>${d.price} DA</div>`;
+        div.onclick = ()=>selectDish(d);
+        kitchenEl.appendChild(div);
+      });
+    }
+
+    let selectedDish = null;
+    function selectDish(d){
+      selectedDish = d;
+      document.querySelectorAll('.dish').forEach((el, i)=>{
+        el.classList.toggle('selected', DISHES[i].id === d.id);
+      });
+      // عندما يختار اللاعب، ابدأ طهي تلقائياً
+      startCooking(d);
+    }
+
+    // إدارة أوامر الزبائن
+    function addOrder(dish=null){
+      if(state.orders.length >= state.capacity) return; // ممتلئ
+      const dishObj = dish || DISHES[Math.floor(Math.random()*DISHES.length)];
+      const id = state.nextOrderId++;
+      const timeLimit = Math.max(8, Math.round(dishObj.time * (1 + (Math.random()*0.6)) - state.level*1.2));
+      const order = {id, dish: dishObj, timeLeft: timeLimit, total: timeLimit, progress:0, status:'waiting'};
+      state.orders.push(order);
+      renderOrders();
+    }
+
+    function renderOrders(){
+      ordersEl.innerHTML = '';
+      state.orders.forEach(o=>{
+        const el = document.createElement('div');
+        el.className = 'order';
+        el.innerHTML = `<div class='meta'><div class='dish-ico'>${o.dish.emoji}</div><div><h3>${o.dish.name}</h3><div style='font-size:13px;color:var(--muted)'>قيمة: ${o.dish.price} DA</div></div></div><div style='text-align:left'><div class='timer'>${o.timeLeft}s</div><div style='margin-top:6px'><button data-id='${o.id}'>قدم</button></div></div>`;
+        const btn = el.querySelector('button');
+        btn.onclick = ()=>serveOrder(o.id);
+        ordersEl.appendChild(el);
+      });
+    }
+
+    // طهي: progress animation per selected dish
+    let cooking = null; // {dish, progress}
+    function startCooking(d){
+      if(!d) return;
+      cooking = {dish:d, progress:0};
+      // إضافة شريط طهي مرئي أسفل المطبخ
+      renderCookingProgress();
+    }
+
+    function renderCookingProgress(){
+      // إزالة أي عناصر قديمة
+      document.querySelectorAll('.cook-progress').forEach(el=>el.remove());
+      if(!cooking) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'cook-progress';
+      wrapper.style.marginTop='10px';
+      wrapper.innerHTML = `<div style='font-size:14px;margin-bottom:6px'>يُطهى الآن: <strong>${cooking.dish.name}</strong></div><div class='progress'><i style='width:${Math.round(cooking.progress)}%'></i></div>`;
+      kitchenEl.parentElement.appendChild(wrapper);
+    }
+
+    // تقديم الطلب: يربط الطبق المطهو بالطلب الأطول انتظاراً من نفس النوع
+    function serveOrder(orderId){
+      const orderIndex = state.orders.findIndex(o=>o.id===orderId);
+      if(orderIndex === -1) return;
+      const order = state.orders[orderIndex];
+      // شرط: يجب أن يكون cooking جاهز أو تطابق الطبق المحدد
+      // تبسيط: إذا كان اللاعب قد طهى الطبق حتى 100% أو اختار الطبق وسيقوم بتقديمه
+      const enough = cooking && cooking.dish.id === order.dish.id && cooking.progress >= 100;
+      if(!enough){
+        // تقديم غير صحيح => فقدان حياة
+        state.lives -= 1;
+        updateUI();
+        alert('لم يتحضر الطبق بعد! خسرت حياة.');
+        if(state.lives <= 0) gameOver();
+        return;
+      }
+      // ناجح
+      state.money += order.dish.price;
+      state.score += Math.round(order.dish.price/2);
+      // إزالة الطلب
+      state.orders.splice(orderIndex,1);
+      // إعادة تعيين الطهي
+      cooking = null;
+      renderCookingProgress();
+      updateUI();
+      renderOrders();
+    }
+
+    function tickSecond(){
+      state.seconds++;
+      // مستوى الوقت
+      const s = state.seconds; const mm = Math.floor(s/60); const ss = s%60;
+      timeEl.textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+
+      // تحديث مؤقتات الطلبات
+      for(let i=state.orders.length-1;i>=0;i--){
+        const o = state.orders[i];
+        o.timeLeft -= 1;
+        // سيقل التوقيت أسرع مع ارتفاع المستوى
+        if(o.timeLeft <= 0){
+          // فشل الطلب
+          state.orders.splice(i,1);
+          state.lives -= 1;
+          if(state.lives <= 0){ gameOver(); }
+        }
+      }
+
+      // تطور الطهي
+      if(cooking){
+        // سرعة الطهي تتأثر بالترقيات
+        const speed = (100 / cooking.dish.time) * state.cookSpeedMultiplier;
+        cooking.progress = Math.min(100, cooking.progress + speed);
+        renderCookingProgress();
+      }
+
+      // تزيد التحديات مع الوقت — أضف طلبات تلقائياً
+      if(Math.random() < 0.45 + state.level*0.01) addOrder();
+      // ارتقاء المستوى كل 60 ثانية
+      if(state.seconds % 60 === 0) {
+        state.level += 1; levelEl.textContent = state.level;
+      }
+
+      renderOrders();
+      updateUI();
+    }
+
+    function updateUI(){
+      moneyEl.textContent = state.money + ' DA';
+      scoreEl.textContent = state.score;
+      livesEl.textContent = state.lives;
+      levelEl.textContent = state.level;
+    }
+
+    function gameOver(){
+      clearInterval(ticker);
+      alert('انتهت اللعبة! نقاطك: ' + state.score + ' — المال: ' + state.money + ' DA');
+      // إعادة تعيين بسيط
+      if(confirm('هل تريد إعادة اللعب؟')) location.reload();
+    }
+
+    // مشتريات المتجر
+    document.getElementById('upgrade-speed').onclick = function(){
+      const cost = Number(this.dataset.cost);
+      if(state.money < cost){ alert('ليس لديك ما يكفي من المال'); return; }
+      state.money -= cost; state.cookSpeedMultiplier += 0.5; updateUI();
+      this.disabled = true; this.textContent = 'تم الشراء';
+    };
+    document.getElementById('upgrade-capacity').onclick = function(){
+      const cost = Number(this.dataset.cost);
+      if(state.money < cost){ alert('ليس لديك ما يكفي من المال'); return; }
+      state.money -= cost; state.capacity += 1; updateUI();
+      this.disabled = true; this.textContent = 'تم الشراء';
+    };
+
+    // زر طلب تجريبي
+    document.getElementById('new-order').onclick = ()=>addOrder();
+
+    // بدء اللعبة
+    renderKitchen();
+    updateUI();
+    // ابدأ بعد ثوانٍ قليلة مع بعض الطلبات
+    addOrder(); addOrder();
+    const ticker = setInterval(tickSecond, 1000);
+
+    // نصيحة: مفتوح لتطوير إضافي: نظام وصفات مع مكونات، توظيف موظفين، صور حقيقية إلخ.
+  </script>
+</body>
+</html>
 
