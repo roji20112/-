@@ -142,7 +142,8 @@ function serveCustomer(cust){
 // تفاعل E: خدمة إذا اللاعب أمام الطاولة والزبون ينتظر
 function interact(){
   // تحقق المسافة إلى أي طاولة قريبة
-  for(const t of tables){const dx = player.x - t.x;
+  for(const t of tables){
+    const dx = player.x - t.x;
     const dy = player.y - t.y;
     if(Math.hypot(dx,dy) < 90){
       const cust = customers.find(c => c.tableId === t.id && c.state === 'waiting');
@@ -273,7 +274,8 @@ function drawMap(){
 // رسم الطاولات
 function drawTables(){
   for(const t of tables){
-    const sx = t.x - camera.x;const sy = t.y - camera.y;
+    const sx = t.x - camera.x;
+    const sy = t.y - camera.y;
     // سطح الطاولة
     ctx.fillStyle = t.occupied ? '#b74b4b' : '#7e6b4a';
     roundRect(ctx, sx - t.w/2, sy - t.h/2, t.w, t.h, 8, true, false);
@@ -408,7 +410,7 @@ function gameLoop(ts){
   // توقيت HUD
   const minutes = Math.floor(gameSeconds/60);
   const seconds = Math.floor(gameSeconds%60).toString().padStart(2,'0');
-  timeEl.textContent = ${minutes}:${seconds};
+  timeEl.textContent = `${minutes}:${seconds}`;
 
   // زيادة غضب العملاء (تم تضمينه كـ patience)
   // تحديث HUD كل إطار
@@ -432,7 +434,8 @@ requestAnimationFrame(gameLoop);
 // حفظ تلقائي بسيط
 setInterval(()=> {
   // يمكن حفظ score و time و settings في localStorage
-  localStorage.setItem('resto-save', JSON.stringify({score, gameSeconds}));}, 10000);
+  localStorage.setItem('resto-save', JSON.stringify({score, gameSeconds}));
+}, 10000);
 
 // تحميل حفظ إن وُجد
 try {
