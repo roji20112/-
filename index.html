@@ -2,33 +2,99 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>تحديد الموقع</title>
+<title>⚠️ SYSTEM BREACH</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:black;
+  color:red;
+  font-family:monospace;
+  text-align:center;
+  overflow:hidden;
+}
+#overlay{
+  position:fixed;inset:0;
+  background:black;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+#title{
+  font-size:28px;
+  animation:flicker .15s infinite;
+}
+#info{
+  margin-top:20px;
+  line-height:1.8;
+}
+#count{
+  font-size:64px;
+  margin-top:25px;
+}
+.shake{animation:shake .12s infinite}
+@keyframes shake{
+  0%{transform:translate(0,0)}
+  25%{transform:translate(3px,2px)}
+  50%{transform:translate(-3px,2px)}
+  75%{transform:translate(2px,-2px)}
+}
+@keyframes flicker{
+  0%{opacity:1}
+  50%{opacity:.3}
+  100%{opacity:1}
+}
+#truth{
+  display:none;
+  color:#00ff00;
+  font-size:26px;
+  margin-top:30px;
+}
+.small{font-size:14px;color:#aaa;margin-top:10px}
+</style>
 </head>
-<body style="font-family:Arial;text-align:center">
+<body>
 
-<h2>تحديد موقعك</h2>
-<button onclick="getLocation()">اضغط هنا</button>
+<div id="overlay" class="shake">
+  <div id="title">⚠️ تم رصد اختراق أمني ⚠️</div>
 
-<p id="result"></p>
+  <div id="info">
+    الجهاز: ANDROID<br>
+    النظام: LINUX<br>
+    IP: 192.168.1.84<br>
+    سحب البيانات: جارٍ التنفيذ…
+  </div>
+
+  <div id="count">10</div>
+
+  <div id="truth">
+    😂 مجرد مقلب<br>
+    لا يوجد أي اختراق<br>
+    أنت بأمان ✔
+    <div class="small">Visual prank only</div>
+  </div>
+</div>
 
 <script>
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition, showError);
-  } else {
-    document.getElementById("result").innerHTML = "المتصفح لا يدعم تحديد الموقع";
+let c = 10;
+const count = document.getElementById("count");
+const overlay = document.getElementById("overlay");
+const truth = document.getElementById("truth");
+const title = document.getElementById("title");
+const info  = document.getElementById("info");
+
+const timer = setInterval(()=>{
+  c--;
+  count.textContent = c;
+  if(c <= 0){
+    clearInterval(timer);
+    overlay.classList.remove("shake");
+    title.style.display="none";
+    info.style.display="none";
+    count.style.display="none";
+    truth.style.display="block";
   }
-}
-
-function showPosition(position) {
-  document.getElementById("result").innerHTML =
-  "خط العرض: " + position.coords.latitude +
-  "<br>خط الطول: " + position.coords.longitude;
-}
-
-function showError(error) {
-  document.getElementById("result").innerHTML = "تم رفض الإذن أو حدث خطأ";
-}
+},1000);
 </script>
 
 </body>
