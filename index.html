@@ -1,26 +1,35 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>لعبة مطعم جزائري — 00 World</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8">
+<title>تحديد الموقع</title>
 </head>
-<body>
-  <div id="ui">
-    <div id="hud">
-      <div>النقاط: <span id="score">0</span></div>
-      <div>الزمن: <span id="time">00:00</span></div>
-      <div>طلبات جاري تنفيذها: <span id="orders-count">0</span></div>
-    </div>
-    <div id="instructions">
-      أسهم / WASD للحركة — إضغط 0
-    للتفاعل — انقر طاولة لخدمة الزبون
-    </div>
-  </div>
+<body style="font-family:Arial;text-align:center">
 
-  <canvas id="gameCanvas"></canvas>
+<h2>تحديد موقعك</h2>
+<button onclick="getLocation()">اضغط هنا</button>
 
-  <script src="main.js"></script>
+<p id="result"></p>
+
+<script>
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(showPosition, showError);
+  } else {
+    document.getElementById("result").innerHTML = "المتصفح لا يدعم تحديد الموقع";
+  }
+}
+
+function showPosition(position) {
+  document.getElementById("result").innerHTML =
+  "خط العرض: " + position.coords.latitude +
+  "<br>خط الطول: " + position.coords.longitude;
+}
+
+function showError(error) {
+  document.getElementById("result").innerHTML = "تم رفض الإذن أو حدث خطأ";
+}
+</script>
+
 </body>
 </html>
